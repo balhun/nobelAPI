@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nobel</title>
+    <style>
+        body { background-color:#632A7A }
+
+        .container {
+            width: 50%;
+            margin: 10px auto;
+            border: 1px solid #AB7FBC;
+            border-radius: 5px;
+            box-shadow: 5px 5px 10px black;
+            background-color: #AB7FBC;
+        }
+
+        .cimek {
+            background-color:#AB7FBC;
+            color: whitesmoke;
+            border-bottom: none;
+            font-size: 20pt;
+            padding: 5px;
+        }
+
+        .content {
+            background-color: white;
+            border: 1px solid #AB7FBC;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .tipus, .evtizedek {
+            cursor: pointer;
+        }
+    </style>
+    <script>
+        let elozoTipus = 0;
+        let elozoEvtized = 1900;
+        let elozoEv = 0;
+
+        async function start() {
+            const response = await fetch("http://localhost:88/tipusok");
+            const tipusok = await response.json();
+            let tipusokID = document.getElementById("tipusokID");
+            let i = 0;
+            for (let tipus of tipusok) {
+                if (i < tipusok.length-1) {
+                    tipusokID.innerHTML += `<span class='tipus' id="${i}" style="color: black;" onclick='tipusKeres("${tipus}", ${i});'>${tipus}</span>, `
+                } else {
+                    tipusokID.innerHTML += `<span class='tipus' id="${i}" style="color: black;" onclick='tipusKeres("${tipus}", ${i});'>${tipus}</span>`
+                }
+                i++;
+            }
+            evtizedek();
+        }
+
+        async function tipusKeres(tipus, id) {
+            document.getElementById(`${elozoTipus}`).setAttribute("style", "color: black; font-weight: normal;");
+            elozoTipus = id;
+            document.getElementById(`${id}`).setAttribute("style", "color: blue; font-weight: bold;");
+            const response = await fetch(`http://localhost:88/dij?tipus=${tipus}`);
+            const adatok = await response.json();
+            document.getElementById("lista").innerHTML = "";
+            for (let adat of adatok) {
+                document.getElementById("lista").innerHTML += `${adat.ev}, ${adat.keresztnev} ${adat.vezetek}: ${adat.tipus}<br>`;
+            }
+            document.getElementById("cim").innerHTML = `Lista / tipus = ${adatok[0].tipus}`
+        }
+
+        function evtizedek() {
+            let ev = 1900;
+            document.getElementById("evtizedek").innerHTML = `<span class="evtizedek" style="color: black;" id="${ev}" onclick="evek(${ev})">${ev}</span>`;
+            ev += 10;
+            for (ev; ev <= 2020; ev += 10) {
+                document.getElementById("evtizedek").innerHTML += ` / <span class="evtizedek" style="color: black;" id="${ev}" onclick="evek(${ev})">${ev}</span>`;
+            }
+        }
+
+        function evek(evtized) {
+            document.getElementById("evek").innerHTML = "";
+            document.getElementById(`${elozoEvtized}`).setAttribute("style", "color: black; font-weight: normal;");
+            elozoEvtized = evtized;
+            document.getElementById(`${evtized}`).setAttribute("style", "color: blue; font-weight: bold;");
+            let vege = evtized+9;
+            for (evtized; evtized <= vege; evtized++) {
+                if (evtized < vege) {
+                    document.getElementById("evek").innerHTML += `<span class="evtizedek" style="color: black;" id="${evtized}ev" onclick="evKeres(${evtized})">${evtized}</span>, `
+                } else {
+                    document.getElementById("evek").innerHTML += `<span class="evtizedek" style="color: black;" id="${evtized}ev" onclick="evKeres(${evtized})">${evtized}</span>`
+                }
+            }
+            elozoEv = elozoEvtized;
+        }
+
+        async function evKeres(ev) {
+            document.getElementById(`${elozoEv}ev`).setAttribute("style", "color: black; font-weight: normal;");
+            elozoEv = ev;
+            document.getElementById(`${ev}ev`).setAttribute("style", "color: blue; font-weight: bold;");
+            const response = await fetch(`http://localhost:88/dij?ev=${ev}`);
+            const adatok = await response.json();
+            document.getElementById("lista").innerHTML = "";
+            for (let adat of adatok) {
+                document.getElementById("lista").innerHTML += `${adat.ev}, ${adat.keresztnev} ${adat.vezetek}: ${adat.tipus}<br>`;
+            }
+            document.getElementById("cim").innerHTML = `Lista / év = ${adatok[0].ev}`
+        }
+
+        async function nevKeres() {
+            let nev = document.getElementById("txVNev").value;
+            const response = await fetch(`http://localhost:88/dij?nev=${nev}`);
+            const adatok = await response.json();
+            document.getElementById("lista").innerHTML = "";
+            for (let adat of adatok) {
+                document.getElementById("lista").innerHTML += `${adat.ev}, ${adat.keresztnev} ${adat.vezetek}: ${adat.tipus}<br>`;
+            }
+            document.getElementById("cim").innerHTML = `Lista / Vezetéknév = ${adatok[0].vezetek}`
+        }
+    </script>
+</head>
+<body onload="start();">
+    <div class="container">
+        <div class="cimek">Típusok</div>
+        <div class="content" id="tipusokID"></div>
+    </div>
+    <div class="container">
+        <div class="cimek">Évtized és év</div>
+        <div class="content" id="evtizedek"></div>
+        <div class="content" id="evek"></div>
+    </div>
+    <div class="container">
+        <div class="cimek">Névkereső</div>
+        <div class="content">Vezetéknév: <input type="text" id="txVNev"> <input type="button" value="Keresés" onclick="nevKeres();"></div>
+    </div>
+    <div class="container">
+        <div class="cimek" id="cim">Lista / ?</div>
+        <div class="content" id="lista"></div>
+    </div>
+</body>
+</html>
